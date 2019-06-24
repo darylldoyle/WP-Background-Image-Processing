@@ -72,10 +72,23 @@ if ( ! class_exists( 'Wpbip' ) ) {
 		 * @return bool
 		 */
 		public function wpbip_queue_bg_resizing( $sizes, $metadata ) {
+
 			$upload_dir    = wp_get_upload_dir();
 			$file_path     = sprintf( '%s/%s', $upload_dir['basedir'], $metadata['file'] );
 			$file_url      = sprintf( '%s/%s', $upload_dir['baseurl'], $metadata['file'] );
-			$attachment_id = $this->get_image_id_from_url( $file_url );
+			$attachmentId  = $this->get_image_id_from_url( $file_url );
+			$attachments   = [];
+
+			if( class_exists('SitePress') ) {
+				$languages = apply_filters( 'wpml_active_languages', NULL );
+				if( isset( $languages ) && !empty( $languages ) ){
+					foreach( $languages as $language ){
+						$attachments[] = apply_filters( 'wpml_object_id', $attachmentId, 'attachment', false, $language['language_code'] );
+					}
+				}
+			}else{
+				$attachments[] = $attachmentId;
+			}
 
 			foreach ( $sizes as $size => $size_data ) {
 
@@ -94,15 +107,18 @@ if ( ! class_exists( 'Wpbip' ) ) {
 					$size_data['crop'] = false;
 				}
 
-				$this->wpbip_queue->push_to_queue( array(
-					'attachment_id' => $attachment_id,
-					'file'          => $file_path,
-					'width'         => $size_data['width'],
-					'height'        => $size_data['height'],
-					'crop'          => $size_data['crop'],
-					'size_name'     => $size,
-					'attempts'      => 0,
-				) );
+				foreach( $attachments as $attachment_id){
+					$this->wpbip_queue->push_to_queue( array(
+						'attachment_id' => $attachment_id,
+						'file'          => $file_path,
+						'width'         => $size_data['width'],
+						'height'        => $size_data['height'],
+						'crop'          => $size_data['crop'],
+						'size_name'     => $size,
+						'attempts'      => 0,
+					) );
+				}
+
 			}
 
 			$this->wpbip_queue->save()->dispatch();

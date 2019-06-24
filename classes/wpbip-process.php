@@ -46,15 +46,17 @@ if ( ! class_exists( 'Wpbip_Process' ) ) {
 					if ( ! is_wp_error( $result ) ) {
 						// Update the image meta
 						$meta = wp_get_attachment_metadata( $item['attachment_id'], true );
+						if( isset($meta) && is_array($meta) ){
 
-						$meta['sizes'][ $item['size_name'] ] = array(
-							'file'      => $result['file'],
-							'width'     => $result['width'],
-							'height'    => $result['height'],
-							'mime-type' => $result['mime-type'],
-						);
+							$meta['sizes'][ $item['size_name'] ] = array(
+								'file'      => $result['file'],
+								'width'     => $result['width'],
+								'height'    => $result['height'],
+								'mime-type' => $result['mime-type'],
+							);
 
-						wp_update_attachment_metadata( $item['attachment_id'], $meta );
+							wp_update_attachment_metadata( $item['attachment_id'], $meta );
+						}
 					} else {
 						$errored = true;
 					}
